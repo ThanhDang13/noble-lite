@@ -1,0 +1,3 @@
+"""
+Panels package initialization
+"""

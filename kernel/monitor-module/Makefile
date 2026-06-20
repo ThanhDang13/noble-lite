@@ -1,5 +1,6 @@
 obj-m += monitor.o
 
+#KDIR := /home/sakata/workspace/noble-lite/linux
 KDIR := /lib/modules/$(shell uname -r)/build
 PWD := $(shell pwd)
 

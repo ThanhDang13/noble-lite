@@ -5,7 +5,7 @@ Main Dashboard Application - Entry point and navigation
 import os
 import sys
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from pathlib import Path
 
 # Add dashboard directory to path for absolute imports
@@ -14,6 +14,7 @@ if str(dashboard_dir) not in sys.path:
     sys.path.insert(0, str(dashboard_dir))
 
 from utils.logger import get_logger
+from utils.privilege import set_cached_password, clear_cached_password, ask_password_dialog
 from panels.kernel_panel import KernelPanel
 from panels.process_manager_panel import ProcessManagerPanel
 from panels.file_manager_panel import FileManagerPanel
@@ -100,7 +101,7 @@ class DashboardApp(tk.Tk):
             ("Network Monitor", "🌐"),
             ("Socket Server", "🖥️"),
             ("Socket Client", "💻"),
-            ("Scripts", "📜"),
+            # ("Scripts", "📜"),  # Disabled temporarily
             ("Logs", "📋")
         ]
 
@@ -127,6 +128,41 @@ class DashboardApp(tk.Tk):
         # Spacer
         spacer = tk.Frame(self.sidebar, bg='#2c3e50')
         spacer.pack(fill=tk.BOTH, expand=True)
+
+        # Root password buttons - DISABLED
+        # root_btn = tk.Button(
+        #     self.sidebar,
+        #     text="🔒 Set Root Password",
+        #     font=("TkDefaultFont", 10),
+        #     bg='#e67e22',
+        #     fg='white',
+        #     activebackground='#d35400',
+        #     activeforeground='white',
+        #     relief=tk.FLAT,
+        #     bd=0,
+        #     cursor='hand2',
+        #     padx=10,
+        #     pady=8,
+        #     command=self.set_root_password
+        # )
+        # root_btn.pack(fill=tk.X, padx=5, pady=5)
+
+        # clear_btn = tk.Button(
+        #     self.sidebar,
+        #     text="Clear Root Password",
+        #     font=("TkDefaultFont", 9),
+        #     bg='#34495e',
+        #     fg='white',
+        #     activebackground='#2c3e50',
+        #     activeforeground='white',
+        #     relief=tk.FLAT,
+        #     bd=0,
+        #     cursor='hand2',
+        #     padx=10,
+        #     pady=5,
+        #     command=self.clear_root_password
+        # )
+        # clear_btn.pack(fill=tk.X, padx=5, pady=2)
 
         # Status bar in sidebar
         self.status_frame = tk.Frame(self.sidebar, bg='#2c3e50', pady=10)
@@ -172,8 +208,8 @@ class DashboardApp(tk.Tk):
                 self.panels[panel_name] = SocketServerPanel(self.content_frame)
             elif panel_name == "Socket Client":
                 self.panels[panel_name] = SocketClientPanel(self.content_frame)
-            elif panel_name == "Scripts":
-                self.panels[panel_name] = ScriptsPanel(self.content_frame)
+            # elif panel_name == "Scripts":
+            #     self.panels[panel_name] = ScriptsPanel(self.content_frame)
             elif panel_name == "Logs":
                 self.panels[panel_name] = LogsPanel(self.content_frame)
 
@@ -212,6 +248,24 @@ class DashboardApp(tk.Tk):
 
         # Schedule next update (every 5 seconds)
         self.after(5000, self.update_kernel_status)
+
+    def set_root_password(self):
+        """Set cached root password for privileged operations."""
+        password = ask_password_dialog(self)
+        if password:
+            set_cached_password(password)
+            messagebox.showinfo("Success",
+                              "Root password cached in memory.\n"
+                              "Scripts requiring root will use this password automatically.")
+            logger.info("Root password cached successfully")
+        else:
+            logger.info("Root password dialog cancelled")
+
+    def clear_root_password(self):
+        """Clear cached root password."""
+        clear_cached_password()
+        messagebox.showinfo("Success", "Root password cache cleared")
+        logger.info("Root password cache cleared")
 
 
 def main():

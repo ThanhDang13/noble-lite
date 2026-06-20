@@ -62,6 +62,7 @@ void handle_client(int client_fd) {
     if (bytes_read > 0) {
         buffer[bytes_read] = '\0';
         printf("Received: %s", buffer);
+        fflush(stdout);  // Force output immediately
 
         const char *response = "Message received\n";
         ssize_t written = write(client_fd, response, strlen(response));
@@ -70,6 +71,7 @@ void handle_client(int client_fd) {
         }
     } else if (bytes_read == 0) {
         printf("Client disconnected\n");
+        fflush(stdout);  // Force output immediately
     } else {
         if (errno != EAGAIN && errno != EWOULDBLOCK) {
             perror("read");
@@ -109,6 +111,7 @@ void run_server(int port) {
     }
 
     printf("Server listening on port %d\n", port);
+    fflush(stdout);  // Force output immediately
 
     while (1) {
         int nfds = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
@@ -131,6 +134,7 @@ void run_server(int port) {
                 printf("New connection from %s:%d\n",
                        inet_ntoa(client_addr.sin_addr),
                        ntohs(client_addr.sin_port));
+                fflush(stdout);  // Force output immediately
 
                 if (set_nonblocking(client_fd) < 0) {
                     perror("set_nonblocking");

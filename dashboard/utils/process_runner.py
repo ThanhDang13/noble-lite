@@ -43,15 +43,19 @@ class ProcessRunner:
             return False
 
         try:
+            # Use unbuffered mode for real-time output
+            process_env = env or os.environ.copy()
+            process_env['PYTHONUNBUFFERED'] = '1'
+
             self.process = subprocess.Popen(
                 command,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 stdin=subprocess.PIPE,
                 text=True,
-                bufsize=1,  # Line buffered
+                bufsize=0,  # Unbuffered (was 1)
                 cwd=cwd,
-                env=env or os.environ.copy()
+                env=process_env
             )
 
             self.is_running = True

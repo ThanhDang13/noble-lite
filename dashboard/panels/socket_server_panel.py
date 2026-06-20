@@ -135,6 +135,7 @@ class SocketServerPanel(ttk.Frame):
             if pid:
                 self.pid_label.config(text=f"PID: {pid}")
 
+            # Start processing output queue
             self.process_runner_queue()
         else:
             self.append_output("Failed to start server\n", "stderr")

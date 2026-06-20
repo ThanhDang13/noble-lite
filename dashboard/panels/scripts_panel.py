@@ -25,6 +25,7 @@ class ScriptsPanel(ttk.Frame):
 
     def __init__(self, parent):
         super().__init__(parent)
+        # Get absolute path to scripts directory (dashboard/../scripts)
         self.scripts_dir = Path(__file__).parent.parent.parent / "scripts"
         self.runner = None
 
@@ -215,6 +216,9 @@ class ScriptsPanel(ttk.Frame):
         # Build command arguments
         cmd = [str(script_path)]
 
+        # Check if needs root and use privilege escalation
+        needs_root = script_info['needs_root']
+
         # Parse parameters based on script
         if script_name == 'backup.sh':
             source = self.param_widgets['source'][0].get().strip()
@@ -285,16 +289,35 @@ class ScriptsPanel(ttk.Frame):
             elif action == 'disable-ntp':
                 cmd.append('--disable-ntp')
 
-        self.append_output(f"$ {' '.join(cmd)}\n", "system")
-        logger.info(f"Running script: {' '.join(cmd)}")
+        self.append_output(f"$ bash {' '.join(cmd)}\n", "system")
+        logger.info(f"Running script via bash: {' '.join(cmd)}")
 
-        self.runner = ProcessRunner(self.on_output)
+        # If script needs root, run with privilege escalation
+        if needs_root:
+            self.append_output("⚠ Script requires root privileges\n", "system")
 
-        if self.runner.start(cmd):
-            self.stop_btn.config(state=tk.NORMAL)
-            self.process_runner_queue()
+            def password_callback():
+                return ask_password_dialog(self)
+
+            # Run synchronously with privilege escalation (bash will be added by run_with_privilege)
+            returncode, stdout, stderr = run_with_privilege(cmd, password_callback=password_callback)
+
+            self.append_output(stdout, "stdout")
+            if stderr:
+                self.append_output(stderr, "stderr")
+            self.append_output(f"\nProcess exited with code {returncode}\n", "system")
+
+            logger.info(f"Script completed with exit code {returncode}")
         else:
-            self.append_output("Failed to start script\n", "stderr")
+            # Run normally via ProcessRunner with bash for non-root scripts
+            bash_cmd = ['bash'] + cmd
+            self.runner = ProcessRunner(self.on_output)
+
+            if self.runner.start(bash_cmd):
+                self.stop_btn.config(state=tk.NORMAL)
+                self.process_runner_queue()
+            else:
+                self.append_output("Failed to start script\n", "stderr")
 
     def stop_runner(self):
         """Stop the running script."""
